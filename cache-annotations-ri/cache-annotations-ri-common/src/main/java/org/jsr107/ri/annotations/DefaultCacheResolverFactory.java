@@ -17,6 +17,8 @@
 
 package org.jsr107.ri.annotations;
 
+import java.io.StringReader;
+
 import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.cache.Caching;
@@ -28,6 +30,17 @@ import javax.cache.configuration.MutableConfiguration;
 import javax.cache.spi.CachingProvider;
 import java.lang.annotation.Annotation;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
+import org.redisson.jcache.JCacheManager;
+
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
 
 /**
  * Default {@link CacheResolverFactory} that uses the default {@link CacheManager} and finds the {@link Cache}
@@ -56,8 +69,68 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
    * Constructs the resolver
    */
   public DefaultCacheResolverFactory() {
-    CachingProvider provider = Caching.getCachingProvider();
-    this.cacheManager = provider.getCacheManager(provider.getDefaultURI(), provider.getDefaultClassLoader());
+    CacheManager result = null;
+
+    //Attempt to configure redisson from vcap_Services
+    String vcap_services = System.getenv("VCAP_SERVICES");
+    if( vcap_services != null && vcap_services.length()>0 ){
+          try{
+              //read the vcap_services
+              JsonReader reader = Json.createReader(new StringReader(vcap_services));
+              JsonObject root = reader.readObject();
+              //get back info for 'rediscloud' service, we only expect one, but 
+              //vcap allows for multiple, so it's an array..
+              JsonArray rediscloud = root.getJsonArray("rediscloud");
+              //possible the service isn't bound?
+              if(rediscloud!=null){
+                  //if we had 2 different rediscloud services bound to this
+                  //app, then we'd need to differentiate between them here.
+                  //but thankfully, we can just use the one and only =)
+                  JsonObject instance = rediscloud.getJsonObject(0);
+                  
+                  //with the service being there, grab all the connection info.. 
+                  JsonObject creds = instance.getJsonObject("credentials");
+                  String port = creds.getString("port");
+                  String host = creds.getString("hostname");
+                  String pwd  = creds.getString("password");
+                  
+                  logger.info("Using Redis server at "+host+":"+port);
+
+                  //Build a direct redisson config for the bound redis service
+                  Config redissonConfig = new Config();
+                  redissonConfig.useSingleServer().setAddress(host+":"+port).setPassword(pwd);
+
+                  //TODO: this approach is temporary until Redisson 3.2.4 is released with 
+                  //      improved programmatic configuration support.
+                  
+                  //Configure a JCache manager using that redisson config.
+                  RedissonClient redisson = Redisson.create(redissonConfig);
+
+                  //Should probably close the manager, but that fails at the mo, because we build it with
+                  //a null provider.. will get resolved with the 3.2.4 changes pending.
+                  @SuppressWarnings("resource")
+                  CacheManager manager = new JCacheManager((Redisson)redisson, JCacheManager.class.getClassLoader(), null, null, null);
+                  
+                  result = manager;
+              }else{
+                  logger.info("vcap_services was missing the rediscloud entry, is the service bound?");
+              }
+              
+              reader.close();
+          }catch(Exception e){
+              //for now.. a generic catch all to prevent the errors being hidden by cdi during init.. 
+              logger.log(Level.SEVERE,"Caught Exception during vcap services processing ", e);
+          }
+    }
+
+    if(result == null){
+      logger.info("Using default CacheManager");
+      CachingProvider provider = Caching.getCachingProvider();
+      this.cacheManager = provider.getCacheManager(provider.getDefaultURI(), provider.getDefaultClassLoader());
+    }else{
+      logger.info("Using vcap_services configured CacheManager"); 
+      this.cacheManager = result;
+    }
   }
 
   /* (non-Javadoc)

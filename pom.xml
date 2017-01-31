@@ -29,6 +29,13 @@
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>javax.json</groupId>
+                <artifactId>javax.json-api</artifactId>
+                <version>1.0</version>
+            </dependency>
+
             <dependency>
                 <groupId>javax.cache</groupId>
                 <artifactId>cache-api</artifactId>
@@ -46,6 +53,7 @@
                 <artifactId>redisson</artifactId>
                 <version>3.2.3</version>
             </dependency>
+
 
         </dependencies>
     </dependencyManagement>
