@@ -42,7 +42,7 @@ Thankfully, empty zip files are unimportant to the application, so we'll use mav
                 <version>2.6</version>
                 <configuration>
                     <failOnMissingWebXml>false</failOnMissingWebXml>
-                    <packagingExcludes>WEB-INF/lib/JSR107-RI-CDI-Redisson-Bluemix-master*,pom.xml</packagingExcludes>
+                    <packagingExcludes>WEB-INF/lib/JSR107-RI-CDI-Redisson-Bluemix-*,pom.xml</packagingExcludes>
                 </configuration>
             </plugin>
 ``` 
