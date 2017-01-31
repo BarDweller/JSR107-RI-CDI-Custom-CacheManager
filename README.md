@@ -1,4 +1,4 @@
-JCache Annotations for CDI in Bluemix.
+JCache Annotations for CDI(1.2+) in Bluemix.
 --------------------------------------
 
 This is a simple adapter layer to allow JSR107 Annotations to be used with
@@ -26,22 +26,6 @@ To use this project.. add it as a dependency to your application..
         </dependency>
 ```
 
-You also need to add a beans.xml to your WEB-INF folder.. containing the following.. (or add the interceptors block to your existing beans xml if you already have content in one)
-
-```
-<beans xmlns="http://java.sun.com/xml/ns/javaee"
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="
-http://java.sun.com/xml/ns/javaee
-http://java.sun.com/xml/ns/javaee/beans_1_0.xsd">
-    <interceptors>
-        <class>org.jsr107.ri.annotations.cdi.CacheResultInterceptor</class>
-        <class>org.jsr107.ri.annotations.cdi.CachePutInterceptor</class>
-        <class>org.jsr107.ri.annotations.cdi.CacheRemoveEntryInterceptor</class>
-        <class>org.jsr107.ri.annotations.cdi.CacheRemoveAllInterceptor</class>
-    </interceptors>
-</beans>
-```
 
 Notes for Liberty
 -----------------
