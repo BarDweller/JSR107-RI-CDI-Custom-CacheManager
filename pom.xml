@@ -65,15 +65,6 @@
     </dependencyManagement>
 
     <build>
-    
-        <resources>
-		<resource>
-			<directory>.</directory>
-			<includes>
-				<include>README.md</include>
-			</includes>
-		</resource>
-	</resources>
         <pluginManagement>
             <plugins>
                 <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
