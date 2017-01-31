@@ -1,5 +1,5 @@
-JCache Annotations for CDI(1.2+) in Bluemix.
---------------------------------------
+JCache Annotations for Redis via Redisson via CDI(1.2+) in Bluemix.
+-------------------------------------------------------------------
 
 This is a simple adapter layer to allow JSR107 Annotations to be used with
 Redisson's JCache API (Could easily be adapted to others), configured automatically 
