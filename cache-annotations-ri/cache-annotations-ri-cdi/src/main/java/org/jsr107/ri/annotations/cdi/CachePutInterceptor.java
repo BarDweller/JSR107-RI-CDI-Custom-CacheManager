@@ -18,7 +18,7 @@ package org.jsr107.ri.annotations.cdi;
 
 
 import org.jsr107.ri.annotations.AbstractCachePutInterceptor;
-
+import javax.annotation.Priority;
 import javax.cache.annotation.CachePut;
 import javax.inject.Inject;
 import javax.interceptor.AroundInvoke;
@@ -35,6 +35,7 @@ import javax.interceptor.InvocationContext;
  */
 @CachePut
 @Interceptor
+@Priority(Interceptor.Priority.APPLICATION)
 public class CachePutInterceptor extends AbstractCachePutInterceptor<InvocationContext> {
 
   @Inject
