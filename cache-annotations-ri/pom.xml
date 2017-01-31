@@ -3,20 +3,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.jsr107.ri</groupId>
-        <artifactId>cache-ri</artifactId>
-        <version>1.1.0-SNAPSHOT</version>
+        <groupId>org.ozzy</groupId>
+        <artifactId>cache-ri-cdi-redisson-bluemix</artifactId>
+        <version>1.0-SNAPSHOT</version>
     </parent>
     <artifactId>cache-annotations-ri</artifactId>
     <packaging>pom</packaging>
 
-    <name>JSR107 Annotations RI</name>
+    <name>JSR107 Annotations RI for CDI In Bluemix</name>
 
     <modules>
         <module>cache-annotations-ri-cdi</module>
         <module>cache-annotations-ri-common</module>
-        <module>cache-annotations-ri-spring</module>
-        <module>cache-annotations-ri-guice</module>
     </modules>
 
     <build>

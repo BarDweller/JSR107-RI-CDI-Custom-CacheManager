@@ -9,13 +9,14 @@
         <!--Fixes broken Maven 3 warning-->
         <relativePath/>
     </parent>
-    <groupId>org.jsr107.ri</groupId>
-    <artifactId>cache-ri</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
+
+    <groupId>org.ozzy</groupId>
+    <artifactId>cache-ri-cdi-redisson-bluemix</artifactId>
+    <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>JSR107 RI</name>
-    <url>https://github.com/jsr107/RI</url>
+    <name>JSR107 RI CDI Annotations for Redisson in Bluemix</name>
+    <url>https://github.com/BarDweller/JSR107-RI-CDI-Redisson-Bluemix</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -24,7 +25,6 @@
 
     <modules>
         <module>cache-annotations-ri</module>
-        <module>cache-ri-impl</module>
     </modules>
 
     <dependencyManagement>
@@ -32,7 +32,7 @@
             <dependency>
                 <groupId>javax.cache</groupId>
                 <artifactId>cache-api</artifactId>
-                <version>1.1.0-SNAPSHOT</version>
+                <version>1.0.0-PFD</version>
             </dependency>
 
             <dependency>
@@ -40,6 +40,13 @@
                 <artifactId>cdi-api</artifactId>
                 <version>1.0-SP4</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson</artifactId>
+                <version>3.2.3</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -184,21 +191,6 @@ mmmm
             </build>
         </profile>
     </profiles>
-
-
-    <!--Required for CloudBees CI. Local builds will still work if you mvn install jsr107api first-->
-    <repositories>
-        <repository>
-            <id>cloudbees-snapshots</id>
-            <url>https://repository-jsr107.forge.cloudbees.com/snapshot</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 
     <licenses>
         <license>
