@@ -26,10 +26,7 @@ To use this project.. add it as a dependency to your application..
         </dependency>
 ```
 
-Then add the interceptors to your beans.xml (or create beans.xml in WEB-INF and give it this content)
-
-```
-You may also need to add a beans.xml to your WEB-INF folder.. containing the following.. (or add the interceptors block to your existing beans xml if you already have content in one)
+You also need to add a beans.xml to your WEB-INF folder.. containing the following.. (or add the interceptors block to your existing beans xml if you already have content in one)
 
 ```
 <beans xmlns="http://java.sun.com/xml/ns/javaee"
