@@ -167,7 +167,7 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
     if (cache == null) {
       logger.warning("No Cache named '" + cacheName + "' was found in the CacheManager, a default cache will be created.");
       
-      MutableConfiguration<Object, Object>() config = new MutableConfiguration<Object, Object>();
+      MutableConfiguration<Object, Object> config = new MutableConfiguration<Object, Object>();
       if(configCustomizer != null){
         configCustomizer.customizeConfiguration(config);
       }
@@ -193,7 +193,7 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
       logger.warning("No Cache named '" + exceptionCacheName +
           "' was found in the CacheManager, a default cache will be created.");
       
-      MutableConfiguration<Object, Object>() config = new MutableConfiguration<Object, Object>();
+      MutableConfiguration<Object, Object> config = new MutableConfiguration<Object, Object>();
       if(configCustomizer != null){
         configCustomizer.customizeConfiguration(config);
       }
