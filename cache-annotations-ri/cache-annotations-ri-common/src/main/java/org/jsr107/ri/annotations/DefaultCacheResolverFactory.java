@@ -55,15 +55,36 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
   private final Logger logger = Logger.getLogger(this.getClass().getName());
 
   private final CacheManager cacheManager;
-
+  private final CacheConfigCustomizer configCustomizer;
+  
+  /**
+   * Customize the config used to create caches via this resolver factory.
+   */
+  public interface CacheConfigCustomizer{
+     public customizeConfiguration(MutableConfiguration<Object, Object> config);
+  }
+  
+  /**
+   * Constructs the resolver
+   *
+   * @param cacheManager the cache manager to use
+   */
+  public DefaultCacheResolverFactory(CacheManager cacheManager, CacheConfigCustomizer configCustomizer) {
+    this.cacheManager = cacheManager;
+    this.configCustomizer = configCustomizer;
+  }
+  
   /**
    * Constructs the resolver
    *
    * @param cacheManager the cache manager to use
    */
   public DefaultCacheResolverFactory(CacheManager cacheManager) {
-    this.cacheManager = cacheManager;
+    this(cacheManager,null);
   }
+  
+  //static .. for now.
+  private static RedissonClient redisson = null;
 
   /**
    * Constructs the resolver
@@ -104,7 +125,9 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
                   //      improved programmatic configuration support.
                   
                   //Configure a JCache manager using that redisson config.
-                  RedissonClient redisson = Redisson.create(redissonConfig);
+                  if(redisson != null){
+                    redisson = Redisson.create(redissonConfig);
+                  }
 
                   //Should probably close the manager, but that fails at the mo, because we build it with
                   //a null provider.. will get resolved with the 3.2.4 changes pending.
@@ -132,7 +155,7 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
       this.cacheManager = result;
     }
   }
-
+  
   /* (non-Javadoc)
    * @see javax.cache.annotation.CacheResolverFactory#getCacheResolver(javax.cache.annotation.CacheMethodDetails)
    */
@@ -143,7 +166,13 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
 
     if (cache == null) {
       logger.warning("No Cache named '" + cacheName + "' was found in the CacheManager, a default cache will be created.");
-      cacheManager.createCache(cacheName, new MutableConfiguration<Object, Object>());
+      
+      MutableConfiguration<Object, Object>() config = new MutableConfiguration<Object, Object>();
+      if(configCustomizer != null){
+        configCustomizer.customizeConfiguration(config);
+      }
+      
+      cacheManager.createCache(cacheName, config);
       cache = cacheManager.getCache(cacheName);
     }
 
@@ -163,7 +192,13 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
     if (cache == null) {
       logger.warning("No Cache named '" + exceptionCacheName +
           "' was found in the CacheManager, a default cache will be created.");
-      cacheManager.createCache(exceptionCacheName, new MutableConfiguration<Object, Object>());
+      
+      MutableConfiguration<Object, Object>() config = new MutableConfiguration<Object, Object>();
+      if(configCustomizer != null){
+        configCustomizer.customizeConfiguration(config);
+      }
+      
+      cacheManager.createCache(cacexceptionCacheName, config);
       cache = cacheManager.getCache(exceptionCacheName);
     }
 
