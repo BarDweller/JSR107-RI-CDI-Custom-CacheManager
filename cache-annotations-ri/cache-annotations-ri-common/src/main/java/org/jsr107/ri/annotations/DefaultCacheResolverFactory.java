@@ -84,7 +84,7 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
   }
   
   //static .. for now.
-  private static RedissonClient redisson = null;
+  private volatile static RedissonClient redisson = null;
 
     /**
    * Constructs the resolver
@@ -99,59 +99,71 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
   public DefaultCacheResolverFactory(CacheConfigCustomizer configCustomizer) {
     this.configCustomizer = configCustomizer;
     CacheManager result = null;
+    
+    if(redisson != null){
+      logger.info("Using existing redisson client");
+    }else{
+        //Attempt to configure redisson from vcap_Services
+        String vcap_services = System.getenv("VCAP_SERVICES");
+        if( vcap_services != null && vcap_services.length()>0 ){
+              try{
+                  //read the vcap_services
+                  JsonReader reader = Json.createReader(new StringReader(vcap_services));
+                  JsonObject root = reader.readObject();
+                  //get back info for 'rediscloud' service, we only expect one, but 
+                  //vcap allows for multiple, so it's an array..
+                  JsonArray rediscloud = root.getJsonArray("rediscloud");
+                  //possible the service isn't bound?
+                  if(rediscloud!=null){
+                      //if we had 2 different rediscloud services bound to this
+                      //app, then we'd need to differentiate between them here.
+                      //but thankfully, we can just use the one and only =)
+                      JsonObject instance = rediscloud.getJsonObject(0);
 
-    //Attempt to configure redisson from vcap_Services
-    String vcap_services = System.getenv("VCAP_SERVICES");
-    if( vcap_services != null && vcap_services.length()>0 ){
-          try{
-              //read the vcap_services
-              JsonReader reader = Json.createReader(new StringReader(vcap_services));
-              JsonObject root = reader.readObject();
-              //get back info for 'rediscloud' service, we only expect one, but 
-              //vcap allows for multiple, so it's an array..
-              JsonArray rediscloud = root.getJsonArray("rediscloud");
-              //possible the service isn't bound?
-              if(rediscloud!=null){
-                  //if we had 2 different rediscloud services bound to this
-                  //app, then we'd need to differentiate between them here.
-                  //but thankfully, we can just use the one and only =)
-                  JsonObject instance = rediscloud.getJsonObject(0);
-                  
-                  //with the service being there, grab all the connection info.. 
-                  JsonObject creds = instance.getJsonObject("credentials");
-                  String port = creds.getString("port");
-                  String host = creds.getString("hostname");
-                  String pwd  = creds.getString("password");
-                  
-                  logger.info("Using Redis server at "+host+":"+port);
+                      //with the service being there, grab all the connection info.. 
+                      JsonObject creds = instance.getJsonObject("credentials");
+                      String port = creds.getString("port");
+                      String host = creds.getString("hostname");
+                      String pwd  = creds.getString("password");
 
-                  //Build a direct redisson config for the bound redis service
-                  Config redissonConfig = new Config();
-                  redissonConfig.useSingleServer().setAddress(host+":"+port).setPassword(pwd);
+                      logger.info("Using Redis server at "+host+":"+port);
 
-                  //TODO: this approach is temporary until Redisson 3.2.4 is released with 
-                  //      improved programmatic configuration support.
-                  
-                  //Configure a JCache manager using that redisson config.
-                  if(redisson != null){
-                    redisson = Redisson.create(redissonConfig);
+                      //Build a direct redisson config for the bound redis service
+                      Config redissonConfig = new Config();
+                      redissonConfig.useSingleServer().setAddress(host+":"+port).setPassword(pwd);
+
+                      //TODO: this approach is temporary until Redisson 3.2.4 is released with 
+                      //      improved programmatic configuration support.
+
+                      //Configure a JCache manager using that redisson config.
+                      synchronized (this){
+                        if(redisson != null){
+                          logger.info("Storing redisson client for "+host+":"+port);
+                          redisson = Redisson.create(redissonConfig);
+                        }else{
+                          logger.info("Not creating redisson, as already built");
+                        }
+                      }
+                    
+                  }else{
+                      logger.info("vcap_services was missing the rediscloud entry, is the service bound?");
                   }
 
-                  //Should probably close the manager, but that fails at the mo, because we build it with
-                  //a null provider.. will get resolved with the 3.2.4 changes pending.
-                  @SuppressWarnings("resource")
-                  CacheManager manager = new JCacheManager((Redisson)redisson, JCacheManager.class.getClassLoader(), null, null, null);
-                  
-                  result = manager;
-              }else{
-                  logger.info("vcap_services was missing the rediscloud entry, is the service bound?");
+                  reader.close();
+              }catch(Exception e){
+                  //for now.. a generic catch all to prevent the errors being hidden by cdi during init.. 
+                  logger.log(Level.SEVERE,"Caught Exception during vcap services processing ", e);
               }
-              
-              reader.close();
-          }catch(Exception e){
-              //for now.. a generic catch all to prevent the errors being hidden by cdi during init.. 
-              logger.log(Level.SEVERE,"Caught Exception during vcap services processing ", e);
-          }
+        }
+    }
+    
+    if(redisson != null){
+        logger.info("Building CacheManager using Redisson client");
+        //Should probably close the manager, but that fails at the mo, because we build it with
+        //a null provider.. will get resolved with the 3.2.4 changes pending.
+        @SuppressWarnings("resource")
+        CacheManager manager = new JCacheManager((Redisson)redisson, JCacheManager.class.getClassLoader(), null, null, null);
+        result = manager;
     }
 
     if(result == null){
