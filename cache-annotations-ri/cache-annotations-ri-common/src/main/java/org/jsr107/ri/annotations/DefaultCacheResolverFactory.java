@@ -90,7 +90,7 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
    * Constructs the resolver
    */
   public DefaultCacheResolverFactory() {
-    this(null);
+    this((CacheConfigCustomizer)null);
   }
   
   /**
