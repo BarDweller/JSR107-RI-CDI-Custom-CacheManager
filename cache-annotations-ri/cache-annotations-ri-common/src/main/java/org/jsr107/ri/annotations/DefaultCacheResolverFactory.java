@@ -137,7 +137,7 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
 
                       //Configure a JCache manager using that redisson config.
                       synchronized (this){
-                        if(redisson != null){
+                        if(redisson == null){
                           logger.info("Storing redisson client for "+host+":"+port);
                           redisson = Redisson.create(redissonConfig);
                         }else{
