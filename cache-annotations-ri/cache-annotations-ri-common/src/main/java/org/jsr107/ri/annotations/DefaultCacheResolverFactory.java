@@ -61,7 +61,7 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
    * Customize the config used to create caches via this resolver factory.
    */
   public interface CacheConfigCustomizer{
-     public customizeConfiguration(MutableConfiguration<Object, Object> config);
+     public void customizeConfiguration(MutableConfiguration<Object, Object> config);
   }
   
   /**
