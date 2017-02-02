@@ -86,10 +86,18 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
   //static .. for now.
   private static RedissonClient redisson = null;
 
-  /**
+    /**
    * Constructs the resolver
    */
   public DefaultCacheResolverFactory() {
+    this(null);
+  }
+  
+  /**
+   * Constructs the resolver
+   */
+  public DefaultCacheResolverFactory(CacheConfigCustomizer configCustomizer) {
+    this.configCustomizer = configCustomizer;
     CacheManager result = null;
 
     //Attempt to configure redisson from vcap_Services
