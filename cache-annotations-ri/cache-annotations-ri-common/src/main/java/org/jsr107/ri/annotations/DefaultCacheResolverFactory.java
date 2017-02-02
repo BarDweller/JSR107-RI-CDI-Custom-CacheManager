@@ -198,7 +198,7 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
         configCustomizer.customizeConfiguration(config);
       }
       
-      cacheManager.createCache(cacexceptionCacheName, config);
+      cacheManager.createCache(exceptionCacheName, config);
       cache = cacheManager.getCache(exceptionCacheName);
     }
 
