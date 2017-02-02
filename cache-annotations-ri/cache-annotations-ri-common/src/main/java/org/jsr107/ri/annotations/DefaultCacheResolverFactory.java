@@ -101,8 +101,9 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
     CacheManager result = null;
     
     if(redisson != null){
-      logger.info("Using existing redisson client");
+      logger.info("Skipping VCAP_SERVICES parse and using existing redisson client");
     }else{
+        logger.info("Processing VCAP_SERVICES for configuration");
         //Attempt to configure redisson from vcap_Services
         String vcap_services = System.getenv("VCAP_SERVICES");
         if( vcap_services != null && vcap_services.length()>0 ){
@@ -132,10 +133,8 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
                       Config redissonConfig = new Config();
                       redissonConfig.useSingleServer().setAddress(host+":"+port).setPassword(pwd);
 
-                      //TODO: this approach is temporary until Redisson 3.2.4 is released with 
-                      //      improved programmatic configuration support.
-
-                      //Configure a JCache manager using that redisson config.
+                      //Configure our redisson client.
+                      logger.info("Reddison Built ? "+(redisson!=null));
                       synchronized (this){
                         if(redisson == null){
                           logger.info("Storing redisson client for "+host+":"+port);
@@ -159,20 +158,19 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
     
     if(redisson != null){
         logger.info("Building CacheManager using Redisson client");
+        //TODO: this approach is temporary until Redisson 3.2.4 is released with 
+        //      improved programmatic configuration support.
+
+        //Configure a JCache manager using that redisson client.     
         //Should probably close the manager, but that fails at the mo, because we build it with
         //a null provider.. will get resolved with the 3.2.4 changes pending.
         @SuppressWarnings("resource")
         CacheManager manager = new JCacheManager((Redisson)redisson, JCacheManager.class.getClassLoader(), null, null, null);
-        result = manager;
-    }
-
-    if(result == null){
-      logger.info("Using default CacheManager");
-      CachingProvider provider = Caching.getCachingProvider();
-      this.cacheManager = provider.getCacheManager(provider.getDefaultURI(), provider.getDefaultClassLoader());
+        this.cacheManager = manager;
     }else{
-      logger.info("Using vcap_services configured CacheManager"); 
-      this.cacheManager = result;
+        logger.info("Using Default CacheManager");
+        CachingProvider provider = Caching.getCachingProvider();
+        this.cacheManager = provider.getCacheManager(provider.getDefaultURI(), provider.getDefaultClassLoader());
     }
   }
   
