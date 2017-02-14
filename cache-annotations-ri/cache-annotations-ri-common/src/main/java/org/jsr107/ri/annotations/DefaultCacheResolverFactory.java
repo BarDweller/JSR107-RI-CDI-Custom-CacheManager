@@ -31,6 +31,7 @@ import javax.cache.spi.CachingProvider;
 import java.lang.annotation.Annotation;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.ServiceLoader;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
@@ -55,119 +56,39 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
   private final Logger logger = Logger.getLogger(this.getClass().getName());
 
   private final CacheManager cacheManager;
-  private final CacheConfigCustomizer configCustomizer;
   
   /**
-   * Customize the config used to create caches via this resolver factory.
+   * Customize the manager used to create caches via this resolver factory.
    */
-  public interface CacheConfigCustomizer{
-     public void customizeConfiguration(MutableConfiguration<Object, Object> config);
+  public interface DefaultCacheManagerProvider {
+    public CacheManager getDefaultCacheManager();
   }
-  
-  /**
-   * Constructs the resolver
-   *
-   * @param cacheManager the cache manager to use
-   */
-  public DefaultCacheResolverFactory(CacheManager cacheManager, CacheConfigCustomizer configCustomizer) {
-    this.cacheManager = cacheManager;
-    this.configCustomizer = configCustomizer;
-  }
-  
+   
   /**
    * Constructs the resolver
    *
    * @param cacheManager the cache manager to use
    */
   public DefaultCacheResolverFactory(CacheManager cacheManager) {
-    this(cacheManager,null);
-  }
-  
-  //static .. for now.
-  private volatile static RedissonClient redisson = null;
-
-    /**
-   * Constructs the resolver
-   */
-  public DefaultCacheResolverFactory() {
-    this((CacheConfigCustomizer)null);
+    this.cacheManager = cacheManager;
   }
   
   /**
    * Constructs the resolver
    */
-  public DefaultCacheResolverFactory(CacheConfigCustomizer configCustomizer) {
-    this.configCustomizer = configCustomizer;
+  public DefaultCacheResolverFactory() {
     CacheManager result = null;
-    
-    if(redisson != null){
-      logger.info("Skipping VCAP_SERVICES parse and using existing redisson client");
-    }else{
-        logger.info("Processing VCAP_SERVICES for configuration");
-        //Attempt to configure redisson from vcap_Services
-        String vcap_services = System.getenv("VCAP_SERVICES");
-        if( vcap_services != null && vcap_services.length()>0 ){
-              try{
-                  //read the vcap_services
-                  JsonReader reader = Json.createReader(new StringReader(vcap_services));
-                  JsonObject root = reader.readObject();
-                  //get back info for 'rediscloud' service, we only expect one, but 
-                  //vcap allows for multiple, so it's an array..
-                  JsonArray rediscloud = root.getJsonArray("rediscloud");
-                  //possible the service isn't bound?
-                  if(rediscloud!=null){
-                      //if we had 2 different rediscloud services bound to this
-                      //app, then we'd need to differentiate between them here.
-                      //but thankfully, we can just use the one and only =)
-                      JsonObject instance = rediscloud.getJsonObject(0);
-
-                      //with the service being there, grab all the connection info.. 
-                      JsonObject creds = instance.getJsonObject("credentials");
-                      String port = creds.getString("port");
-                      String host = creds.getString("hostname");
-                      String pwd  = creds.getString("password");
-
-                      logger.info("Using Redis server at "+host+":"+port);
-
-                      //Build a direct redisson config for the bound redis service
-                      Config redissonConfig = new Config();
-                      redissonConfig.useSingleServer().setAddress(host+":"+port).setPassword(pwd);
-
-                      //Configure our redisson client.
-                      logger.info("Reddison Built ? "+(redisson!=null));
-                      synchronized (this){
-                        if(redisson == null){
-                          logger.info("Storing redisson client for "+host+":"+port);
-                          redisson = Redisson.create(redissonConfig);
-                        }else{
-                          logger.info("Not creating redisson, as already built");
-                        }
-                      }
-                    
-                  }else{
-                      logger.info("vcap_services was missing the rediscloud entry, is the service bound?");
-                  }
-
-                  reader.close();
-              }catch(Exception e){
-                  //for now.. a generic catch all to prevent the errors being hidden by cdi during init.. 
-                  logger.log(Level.SEVERE,"Caught Exception during vcap services processing ", e);
-              }
-        }
+        
+    ServiceLoader<DefaultCacheManagerProvider> defaultProviders = ServiceLoader.load(DefaultCacheManagerProvider.class);
+    for(DefaultCacheManagerProvider dcp : defaultProviders) {
+      result = dcp.getDefaultCacheManager();
+      if(result!=null){
+        logger.info("Using Customized CacheManager");
+        break;
+      }        
     }
     
-    if(redisson != null){
-        logger.info("Building CacheManager using Redisson client");
-        //TODO: this approach is temporary until Redisson 3.2.4 is released with 
-        //      improved programmatic configuration support.
-
-        //Configure a JCache manager using that redisson client.     
-        //Should probably close the manager, but that fails at the mo, because we build it with
-        //a null provider.. will get resolved with the 3.2.4 changes pending.
-        @SuppressWarnings("resource")
-        CacheManager manager = new JCacheManager((Redisson)redisson, JCacheManager.class.getClassLoader(), null, null, null);
-        this.cacheManager = manager;
-    }else{
+    if(result==null){
         logger.info("Using Default CacheManager");
         CachingProvider provider = Caching.getCachingProvider();
         this.cacheManager = provider.getCacheManager(provider.getDefaultURI(), provider.getDefaultClassLoader());
@@ -186,10 +107,6 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
       logger.warning("No Cache named '" + cacheName + "' was found in the CacheManager, a default cache will be created.");
       
       MutableConfiguration<Object, Object> config = new MutableConfiguration<Object, Object>();
-      if(configCustomizer != null){
-        configCustomizer.customizeConfiguration(config);
-      }
-      
       cacheManager.createCache(cacheName, config);
       cache = cacheManager.getCache(cacheName);
     }
@@ -212,10 +129,6 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
           "' was found in the CacheManager, a default cache will be created.");
       
       MutableConfiguration<Object, Object> config = new MutableConfiguration<Object, Object>();
-      if(configCustomizer != null){
-        configCustomizer.customizeConfiguration(config);
-      }
-      
       cacheManager.createCache(exceptionCacheName, config);
       cache = cacheManager.getCache(exceptionCacheName);
     }
