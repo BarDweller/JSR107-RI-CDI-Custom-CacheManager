@@ -27,7 +27,7 @@ To use this project.. add it as a dependency to your application..
 ```
         <dependency>
             <groupId>com.github.BarDweller</groupId>
-            <artifactId>JSR107-RI-CDI-Redisson-Bluemix</artifactId>
+            <artifactId>JSR107-RI-CDI-Custom-CacheManager</artifactId>
             <version>v1.0.9-STILLETO</version>
         </dependency>
 ```
