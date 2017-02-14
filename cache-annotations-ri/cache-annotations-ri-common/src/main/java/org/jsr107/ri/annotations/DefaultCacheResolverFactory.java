@@ -92,6 +92,8 @@ public class DefaultCacheResolverFactory implements CacheResolverFactory {
         logger.info("Using Default CacheManager");
         CachingProvider provider = Caching.getCachingProvider();
         this.cacheManager = provider.getCacheManager(provider.getDefaultURI(), provider.getDefaultClassLoader());
+    }else{
+        this.cacheManager = result;
     }
   }
   
