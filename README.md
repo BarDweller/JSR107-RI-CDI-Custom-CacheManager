@@ -1,17 +1,23 @@
-JCache Annotations for Redis via Redisson via CDI(1.2+) in Bluemix.
--------------------------------------------------------------------
+Configurable JCache Annotations
+-------------------------------
 
-This is a simple adapter layer to allow JSR107 Annotations to be used with
-Redisson's JCache API (Could easily be adapted to others), configured automatically 
-by the `rediscloud` from the `VCAP_SERVICES` environment var when hosted within Bluemix.
+This is a simple fork of the RI annations layer to allow JSR107 Annotations to be used with
+CDI Containers, with the additional capability that the default CacheManager can be supplied
+via a java service approach, rather than coming from the usual 
 
-At the moment, this project supports only one rediscloud instance, if your app has multiple
-rediscloud service instances attached, this project will use the first one it finds.
+```
+Caching.getCachingProvider().getCacheManager()
+```
 
-The code is pretty much entirely based from the Annotations & CDI layer from 
+This allows for the CacheManager to be instantiated using config gathered programatically, 
+and allows the application to pick & instantiate the backing JSR107 CacheManager implementation
+that should be used by the annotations.
+
+The code is pretty much entirely the same as the Annotations & CDI layer from 
 the JCache RI, at https://github.com/jsr107/RI. With a minor change to how the default 
-CacheManager is configured, to have the default be built to use Redisson, configured 
-via the VCAP_SERVICES env var.
+CacheManager is configured, to allow the default CacheManager to come from a java
+service implementation, and a slight change to the CDI interceptor definitions to allow
+applications to depend on this repo as a jitpack library, with only an empty beans.xml.
 
 Usage
 -----
@@ -22,30 +28,30 @@ To use this project.. add it as a dependency to your application..
         <dependency>
             <groupId>com.github.BarDweller</groupId>
             <artifactId>JSR107-RI-CDI-Redisson-Bluemix</artifactId>
-            <version>v1.0.5-STILLETO</version>
+            <version>v1.0.9-STILLETO</version>
         </dependency>
 ```
 
+And add an empty `beans.xml` to your `WEB-INF` folder.
 
-Notes for Liberty
------------------
-
-If you are running on Liberty, you may need to exclude the root jar created by JitPack. 
-It seems JitPack creates an empty zip file for a pom packaged project, and gives it the extension '.jar'
-Jar files are supposed to have a META-INF/MANIFEST.MF entry, and a totally empty zip file isn't a valid jar.
-Thankfully, empty zip files are unimportant to the application, so we'll use maven to remove the root jar.
-
+To customise the CacheManager used by annotations, simply add a java services file with the name;
 ```
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <version>2.6</version>
-                <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml>
-                    <packagingExcludes>WEB-INF/lib/JSR107-RI-CDI-Redisson-Bluemix-*,pom.xml</packagingExcludes>
-                </configuration>
-            </plugin>
-``` 
+META-INF/services/org.jsr107.ri.annotations.DefaultCacheResolverFactory$DefaultCacheManagerProvider
+```
+And include in that file, the name of the implementation class for the `DefaultCacheManagerProvider` you wish the annotations
+code to use. 
+
+`org.jsr107.ri.annotations.DefaultCacheResolverFactory.DefaultCacheManagerProvider` is a simple interface 
+with a single method;
+```
+  public interface DefaultCacheManagerProvider {
+    public CacheManager getDefaultCacheManager();
+  }
+```
+
+You could choose to say, parse VCAP_SERVICES within a cloud environment, and then instantiate an appropriately 
+configured [Redisson](https://redisson.org/) instance of JCacheManager, [like this](https://github.com/BarDweller/gameon-jsr107-room/blob/master/src/main/java/org/gameontext/sample/jsr107defaultprovider/RedissonCacheManagerProvider.java)
+
 
 
 
