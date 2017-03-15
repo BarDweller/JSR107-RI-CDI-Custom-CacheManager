@@ -1,3 +1,6 @@
+[![Release](https://jitpack.io/v/BarDweller/JSR107-RI-CDI-Custom-CacheManager.svg)]
+(https://jitpack.io/#BarDweller/JSR107-RI-CDI-Custom-CacheManager)
+
 Configurable JCache Annotations
 -------------------------------
 
